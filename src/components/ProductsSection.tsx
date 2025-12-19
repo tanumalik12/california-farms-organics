@@ -1,45 +1,89 @@
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useProducts } from "@/hooks/useProducts";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
 import vegetablesImage from "@/assets/vegetables-display.jpg";
 
-interface Product {
-  id: number;
-  name: string;
-  price: string;
-  unit: string;
-  category: string;
-}
-
-const products: Product[] = [
-  { id: 1, name: "Fresh Spinach", price: "₹40", unit: "per bunch", category: "Leafy Greens" },
-  { id: 2, name: "Organic Tomatoes", price: "₹60", unit: "per kg", category: "Fruits" },
-  { id: 3, name: "Farm Carrots", price: "₹50", unit: "per kg", category: "Root Vegetables" },
-  { id: 4, name: "Green Cabbage", price: "₹35", unit: "per piece", category: "Leafy Greens" },
-  { id: 5, name: "Bell Peppers Mix", price: "₹80", unit: "per kg", category: "Fruits" },
-  { id: 6, name: "Fresh Coriander", price: "₹20", unit: "per bunch", category: "Herbs" },
-  { id: 7, name: "Organic Potatoes", price: "₹45", unit: "per kg", category: "Root Vegetables" },
-  { id: 8, name: "Green Beans", price: "₹70", unit: "per kg", category: "Beans" },
-];
-
 const ProductsSection = () => {
-  const scrollToContact = () => {
-    const element = document.getElementById("contact");
-    element?.scrollIntoView({ behavior: "smooth" });
+  const { products, isLoading, error } = useProducts(false);
+  const { addItem } = useCart();
+  const { toast } = useToast();
+
+  const handleAddToCart = (product: any) => {
+    if (!product.is_available || (product.stock_quantity !== null && product.stock_quantity <= 0)) {
+      toast({
+        title: "Out of Stock",
+        description: `${product.name} is currently unavailable.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: parseFloat(product.price),
+      unit: `per ${product.unit}`,
+      image_url: product.image_url,
+    });
+
+    toast({
+      title: "Added to Cart",
+      description: `${product.name} has been added to your cart.`,
+    });
+  };
+
+  const getStockStatus = (product: any) => {
+    if (!product.is_available) return { label: "Out of Stock", color: "destructive" };
+    if (product.stock_quantity === null) return null;
+    if (product.stock_quantity <= 0) return { label: "Out of Stock", color: "destructive" };
+    if (product.stock_quantity <= 5) return { label: `Only ${product.stock_quantity} left`, color: "warning" };
+    return { label: "In Stock", color: "success" };
+  };
+
+  const getCategoryLabel = (category: string | null) => {
+    const labels: Record<string, string> = {
+      vegetables: "Vegetables",
+      leafy: "Leafy Greens",
+      fruits: "Fruits",
+      herbs: "Herbs",
+    };
+    return labels[category || "vegetables"] || "Vegetables";
+  };
+
+  const isOrderDay = () => {
+    const day = new Date().getDay();
+    return day === 1 || day === 4; // Monday or Thursday
   };
 
   return (
     <section id="products" className="py-20 bg-muted/50">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12">
+        <div className="text-center max-w-2xl mx-auto mb-8">
           <p className="text-secondary font-medium mb-2">Our Produce</p>
           <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-4">
             Fresh From the Farm
           </h2>
           <p className="text-muted-foreground">
-            Browse our selection of organic vegetables, harvested fresh daily from our farm. 
-            All prices are approximate and may vary based on season.
+            Browse our selection of organic vegetables, harvested fresh daily from our farm in Ramgiri, Nagpur.
           </p>
+        </div>
+
+        {/* Order Day Notice */}
+        <div className="max-w-2xl mx-auto mb-8">
+          <div className={`p-4 rounded-xl flex items-center gap-3 ${isOrderDay() ? 'bg-primary/10 border border-primary/20' : 'bg-secondary/10 border border-secondary/20'}`}>
+            <AlertCircle className={`w-5 h-5 flex-shrink-0 ${isOrderDay() ? 'text-primary' : 'text-secondary'}`} />
+            <div>
+              <p className={`font-medium ${isOrderDay() ? 'text-primary' : 'text-foreground'}`}>
+                {isOrderDay() ? "🌿 Today is order day!" : "Orders on Monday & Thursday only"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Delivery: 12 PM - 3 PM • Fresh from farm within 3 hours
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Featured Image */}
@@ -64,37 +108,90 @@ const ProductsSection = () => {
           </div>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <span className="ml-2 text-muted-foreground">Loading products...</span>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12">
+            <p className="text-destructive">Failed to load products. Please try again.</p>
+          </div>
+        )}
+
         {/* Product Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className="bg-card rounded-xl p-5 border border-border hover:shadow-elevated transition-all duration-300 hover:-translate-y-1"
-            >
-              <span className="inline-block text-xs font-medium text-secondary bg-secondary/10 px-2 py-1 rounded-full mb-3">
-                {product.category}
-              </span>
-              <h3 className="font-heading font-semibold text-lg text-foreground mb-2">
-                {product.name}
-              </h3>
-              <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-xl font-bold text-primary">{product.price}</span>
-                <span className="text-sm text-muted-foreground">{product.unit}</span>
+        {!isLoading && !error && (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {products.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">No products available at the moment.</p>
               </div>
-              <Button variant="outline" size="sm" className="w-full" onClick={scrollToContact}>
-                <ShoppingCart className="w-4 h-4" />
-                Add to Order
-              </Button>
-            </div>
-          ))}
-        </div>
+            ) : (
+              products.map((product) => {
+                const stockStatus = getStockStatus(product);
+                const isOutOfStock = !product.is_available || (product.stock_quantity !== null && product.stock_quantity <= 0);
+
+                return (
+                  <div
+                    key={product.id}
+                    className={`bg-card rounded-xl p-5 border border-border hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 ${isOutOfStock ? 'opacity-70' : ''}`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="inline-block text-xs font-medium text-secondary bg-secondary/10 px-2 py-1 rounded-full">
+                        {getCategoryLabel(product.category)}
+                      </span>
+                      {stockStatus && (
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                          stockStatus.color === 'destructive' ? 'bg-destructive/10 text-destructive' :
+                          stockStatus.color === 'warning' ? 'bg-yellow-500/10 text-yellow-600' :
+                          'bg-green-500/10 text-green-600'
+                        }`}>
+                          {stockStatus.label}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-heading font-semibold text-lg text-foreground mb-1">
+                      {product.name}
+                    </h3>
+                    {product.description && (
+                      <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                        {product.description}
+                      </p>
+                    )}
+                    <div className="flex items-baseline gap-2 mb-4">
+                      <span className="text-xl font-bold text-primary">₹{product.price}</span>
+                      <span className="text-sm text-muted-foreground">per {product.unit}</span>
+                    </div>
+                    <Button 
+                      variant={isOutOfStock ? "outline" : "default"} 
+                      size="sm" 
+                      className="w-full" 
+                      onClick={() => handleAddToCart(product)}
+                      disabled={isOutOfStock}
+                    >
+                      <ShoppingCart className="w-4 h-4 mr-2" />
+                      {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+                    </Button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
 
         {/* CTA */}
         <div className="text-center">
           <p className="text-muted-foreground mb-4">
-            Want something specific? We grow over 50 varieties of vegetables!
+            Want something specific? Contact us for custom orders!
           </p>
-          <Button size="lg" onClick={scrollToContact}>
+          <Button 
+            size="lg" 
+            onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+          >
             Contact Us for Custom Orders
           </Button>
         </div>
