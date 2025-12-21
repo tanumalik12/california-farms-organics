@@ -1,6 +1,6 @@
 import { X, Minus, Plus, ShoppingBag, Trash2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCart, MINIMUM_ORDER } from "@/contexts/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 
 interface CartDrawerProps {
@@ -139,15 +139,6 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
           {/* Footer */}
           {items.length > 0 && (
             <div className="p-4 border-t border-border space-y-4">
-              {/* Minimum Order Warning */}
-              {total < MINIMUM_ORDER && (
-                <div className="p-3 bg-destructive/10 rounded-lg flex items-start gap-2">
-                  <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0" />
-                  <p className="text-sm text-destructive">
-                    Minimum order value is ₹{MINIMUM_ORDER}. Add ₹{MINIMUM_ORDER - total} more.
-                  </p>
-                </div>
-              )}
 
               {/* Order Day Warning */}
               {!isOrderAllowed() && (
@@ -174,7 +165,6 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
                 </Button>
                 <Button
                   onClick={handleCheckout}
-                  disabled={total < MINIMUM_ORDER}
                   className="flex-1"
                 >
                   Checkout
