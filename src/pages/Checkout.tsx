@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, CreditCard, Banknote, AlertCircle, CheckCircle, MapPin, Truck } from "lucide-react";
+import { ArrowLeft, CreditCard, AlertCircle, MapPin, Truck, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,7 +21,7 @@ const Checkout = () => {
   const { getDeliveryChargeByPincode, zones } = useDeliveryZones();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"cod" | "online">("cod");
+  const [paymentMethod] = useState<"online">("online");
   const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
   const [showAddressManager, setShowAddressManager] = useState(false);
   const [deliveryCharge, setDeliveryCharge] = useState(0);
@@ -153,13 +153,7 @@ const Checkout = () => {
 
   const handleOTPVerified = () => {
     setShowOTPVerification(false);
-    
-    if (paymentMethod === "online") {
-      setShowUPIPayment(true);
-    } else {
-      // COD - place order directly
-      placeOrder(null);
-    }
+    setShowUPIPayment(true);
   };
 
   const handleUPIPaymentConfirm = (upiReference: string) => {
@@ -422,38 +416,12 @@ const Checkout = () => {
             {/* Payment Method */}
             <div className="bg-card rounded-xl border border-border p-6">
               <h2 className="font-heading text-lg font-semibold mb-4">Payment Method</h2>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("cod")}
-                  className={`p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
-                    paymentMethod === "cod"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <Banknote className="w-5 h-5 text-primary" />
-                  <div className="text-left">
-                    <p className="font-medium">Cash on Delivery</p>
-                    <p className="text-xs text-muted-foreground">Pay when delivered</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("online")}
-                  className={`p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
-                    paymentMethod === "online"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <CreditCard className="w-5 h-5 text-primary" />
-                  <div className="text-left">
-                    <p className="font-medium">UPI Payment</p>
-                    <p className="text-xs text-muted-foreground">GPay, PhonePe, Paytm</p>
-                  </div>
-                </button>
+              <div className="p-4 rounded-lg border-2 border-primary bg-primary/5 flex items-center gap-3">
+                <CreditCard className="w-5 h-5 text-primary" />
+                <div className="text-left">
+                  <p className="font-medium">UPI Payment</p>
+                  <p className="text-xs text-muted-foreground">GPay, PhonePe, Paytm</p>
+                </div>
               </div>
             </div>
           </div>
