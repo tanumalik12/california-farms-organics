@@ -200,10 +200,13 @@ export type Database = {
           image_url: string | null
           image_urls: string[] | null
           is_available: boolean | null
+          is_bestseller: boolean | null
+          is_fresh_today: boolean | null
           is_hidden: boolean | null
           name: string
           price: number
           stock_quantity: number | null
+          subcategory: string | null
           unit: string
           updated_at: string
         }
@@ -215,10 +218,13 @@ export type Database = {
           image_url?: string | null
           image_urls?: string[] | null
           is_available?: boolean | null
+          is_bestseller?: boolean | null
+          is_fresh_today?: boolean | null
           is_hidden?: boolean | null
           name: string
           price: number
           stock_quantity?: number | null
+          subcategory?: string | null
           unit?: string
           updated_at?: string
         }
@@ -230,10 +236,13 @@ export type Database = {
           image_url?: string | null
           image_urls?: string[] | null
           is_available?: boolean | null
+          is_bestseller?: boolean | null
+          is_fresh_today?: boolean | null
           is_hidden?: boolean | null
           name?: string
           price?: number
           stock_quantity?: number | null
+          subcategory?: string | null
           unit?: string
           updated_at?: string
         }

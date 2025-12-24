@@ -1,17 +1,54 @@
-import { ShoppingCart, AlertCircle, Loader2, Package } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { useProducts } from "@/hooks/useProducts";
+import { useState, useMemo } from "react";
+import { AlertCircle, Loader2, SlidersHorizontal } from "lucide-react";
+import { useProducts, Product } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+import CategorySidebar from "./products/CategorySidebar";
+import MobileCategoryScroll from "./products/MobileCategoryScroll";
+import ProductSearch from "./products/ProductSearch";
+import ProductCard from "./products/ProductCard";
+import { CATEGORIES } from "./products/CategoryData";
+
 import vegetablesImage from "@/assets/vegetables-display.jpg";
 
 const ProductsSection = () => {
   const { products, isLoading, error } = useProducts(false);
   const { addItem } = useCart();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
-  const handleAddToCart = (product: any) => {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter products based on category and search
+  const filteredProducts = useMemo(() => {
+    let filtered = products;
+
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          p.description?.toLowerCase().includes(query) ||
+          p.category?.toLowerCase().includes(query)
+      );
+    }
+
+    // Filter by category
+    if (selectedCategory) {
+      filtered = filtered.filter((p) => p.category === selectedCategory);
+    }
+
+    return filtered;
+  }, [products, selectedCategory, searchQuery]);
+
+  const handleAddToCart = (product: Product, quantity: number) => {
     if (!product.is_available || (product.stock_quantity !== null && product.stock_quantity <= 0)) {
       toast({
         title: "Out of Stock",
@@ -21,36 +58,21 @@ const ProductsSection = () => {
       return;
     }
 
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: parseFloat(product.price),
-      unit: `per ${product.unit}`,
-      image_url: product.image_url,
-    });
+    // Add item multiple times based on quantity
+    for (let i = 0; i < quantity; i++) {
+      addItem({
+        id: product.id,
+        name: product.name,
+        price: parseFloat(String(product.price)),
+        unit: `per ${product.unit}`,
+        image_url: product.image_url,
+      });
+    }
 
     toast({
       title: "Added to Cart",
-      description: `${product.name} has been added to your cart.`,
+      description: `${quantity}x ${product.name} added to your cart.`,
     });
-  };
-
-  const getStockStatus = (product: any) => {
-    if (!product.is_available) return { label: "Out of Stock", color: "destructive" };
-    if (product.stock_quantity === null) return null;
-    if (product.stock_quantity <= 0) return { label: "Out of Stock", color: "destructive" };
-    if (product.stock_quantity <= 5) return { label: `Only ${product.stock_quantity} left`, color: "warning" };
-    return { label: "In Stock", color: "success" };
-  };
-
-  const getCategoryLabel = (category: string | null) => {
-    const labels: Record<string, string> = {
-      vegetables: "Vegetables",
-      leafy: "Leafy Greens",
-      fruits: "Fruits",
-      herbs: "Herbs",
-    };
-    return labels[category || "vegetables"] || "Vegetables";
   };
 
   const isOrderDay = () => {
@@ -58,26 +80,40 @@ const ProductsSection = () => {
     return day === 1 || day === 4; // Monday or Thursday
   };
 
+  const getCategoryName = () => {
+    if (!selectedCategory) return "All Products";
+    const category = CATEGORIES.find((c) => c.id === selectedCategory);
+    return category?.name || "Products";
+  };
+
   return (
-    <section id="products" className="py-20 bg-muted/50">
+    <section id="products" className="py-12 md:py-20 bg-gradient-to-b from-background to-muted/30">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-8">
-          <p className="text-secondary font-medium mb-2">Our Produce</p>
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <p className="text-secondary font-semibold mb-2 tracking-wide uppercase text-sm">Our Produce</p>
+          <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
             Fresh From the Farm
           </h2>
-          <p className="text-muted-foreground">
-            Browse our selection of organic vegetables, harvested fresh daily from our farm in Ramgiri, Nagpur.
+          <p className="text-muted-foreground text-lg">
+            Browse our selection of certified organic produce, harvested fresh daily from our farm in Ramgiri, Nagpur.
           </p>
         </div>
 
         {/* Order Day Notice */}
         <div className="max-w-2xl mx-auto mb-8">
-          <div className={`p-4 rounded-xl flex items-center gap-3 ${isOrderDay() ? 'bg-primary/10 border border-primary/20' : 'bg-secondary/10 border border-secondary/20'}`}>
-            <AlertCircle className={`w-5 h-5 flex-shrink-0 ${isOrderDay() ? 'text-primary' : 'text-secondary'}`} />
+          <div
+            className={`p-4 rounded-2xl flex items-center gap-3 ${
+              isOrderDay()
+                ? "bg-primary/10 border-2 border-primary/30"
+                : "bg-secondary/10 border-2 border-secondary/20"
+            }`}
+          >
+            <AlertCircle
+              className={`w-5 h-5 flex-shrink-0 ${isOrderDay() ? "text-primary" : "text-secondary"}`}
+            />
             <div>
-              <p className={`font-medium ${isOrderDay() ? 'text-primary' : 'text-foreground'}`}>
+              <p className={`font-semibold ${isOrderDay() ? "text-primary" : "text-foreground"}`}>
                 {isOrderDay() ? "🌿 Today is order day!" : "Orders on Monday & Thursday only"}
               </p>
               <p className="text-sm text-muted-foreground">
@@ -87,132 +123,161 @@ const ProductsSection = () => {
           </div>
         </div>
 
-        {/* Featured Image */}
-        <div className="relative rounded-2xl overflow-hidden mb-12 shadow-elevated">
+        {/* Search Bar */}
+        <div className="flex justify-center mb-8">
+          <ProductSearch
+            products={products}
+            onSearch={setSearchQuery}
+          />
+        </div>
+
+        {/* Mobile Category Scroll */}
+        <div className="lg:hidden mb-6">
+          <MobileCategoryScroll
+            selectedCategory={selectedCategory}
+            onSelectCategory={(cat) => {
+              setSelectedCategory(cat);
+              setSelectedSubcategory(null);
+            }}
+          />
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex gap-8">
+          {/* Desktop Sidebar */}
+          <div className="hidden lg:block w-64 flex-shrink-0">
+            <CategorySidebar
+              selectedCategory={selectedCategory}
+              selectedSubcategory={selectedSubcategory}
+              onSelectCategory={setSelectedCategory}
+              onSelectSubcategory={setSelectedSubcategory}
+            />
+          </div>
+
+          {/* Products Grid */}
+          <div className="flex-1">
+            {/* Results header */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="font-heading text-xl font-bold text-foreground">
+                  {getCategoryName()}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""} available
+                </p>
+              </div>
+
+              {/* Mobile Filter Button */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="lg:hidden">
+                    <SlidersHorizontal className="w-4 h-4 mr-2" />
+                    Filters
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-80 p-0">
+                  <div className="p-4">
+                    <CategorySidebar
+                      selectedCategory={selectedCategory}
+                      selectedSubcategory={selectedSubcategory}
+                      onSelectCategory={setSelectedCategory}
+                      onSelectSubcategory={setSelectedSubcategory}
+                    />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex flex-col items-center justify-center py-16">
+                <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
+                <span className="text-muted-foreground font-medium">Loading fresh produce...</span>
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+              <div className="text-center py-16 bg-destructive/5 rounded-2xl border border-destructive/20">
+                <p className="text-destructive font-medium">Failed to load products. Please try again.</p>
+              </div>
+            )}
+
+            {/* Product Grid */}
+            {!isLoading && !error && (
+              <>
+                {filteredProducts.length === 0 ? (
+                  <div className="text-center py-16 bg-muted/30 rounded-2xl">
+                    <p className="text-muted-foreground text-lg mb-2">No products found</p>
+                    <p className="text-sm text-muted-foreground">
+                      Try adjusting your search or browse all categories
+                    </p>
+                    <Button
+                      variant="outline"
+                      className="mt-4"
+                      onClick={() => {
+                        setSelectedCategory(null);
+                        setSearchQuery("");
+                      }}
+                    >
+                      View All Products
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {filteredProducts.map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        onAddToCart={handleAddToCart}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Featured Box CTA */}
+        <div className="mt-16 relative rounded-3xl overflow-hidden shadow-elevated">
           <img
             src={vegetablesImage}
             alt="Fresh organic vegetables from California Farms India"
-            className="w-full h-[300px] object-cover"
+            className="w-full h-[300px] md:h-[350px] object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
-          <div className="absolute bottom-6 left-6 right-6">
-            <h3 className="font-heading text-2xl font-bold text-background mb-2">
-              Seasonal Vegetable Box
-            </h3>
-            <p className="text-background/80 mb-4">
-              A curated mix of 5-6 seasonal vegetables, perfect for a week's cooking
-            </p>
-            <div className="flex items-center gap-4">
-              <span className="text-2xl font-bold text-background">₹299</span>
-              <span className="text-background/70">per box</span>
+          <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-transparent" />
+          <div className="absolute inset-0 flex items-center">
+            <div className="p-8 md:p-12 max-w-xl">
+              <span className="inline-block bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm font-semibold mb-4">
+                Best Value
+              </span>
+              <h3 className="font-heading text-3xl md:text-4xl font-bold text-background mb-3">
+                Seasonal Vegetable Box
+              </h3>
+              <p className="text-background/80 mb-6 text-lg">
+                A curated mix of 5-6 seasonal vegetables, perfect for a week's healthy cooking
+              </p>
+              <div className="flex items-center gap-4 mb-6">
+                <span className="text-3xl font-bold text-background">₹299</span>
+                <span className="text-background/70">per box</span>
+              </div>
+              <Button size="lg" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semibold">
+                Order Now
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <span className="ml-2 text-muted-foreground">Loading products...</span>
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className="text-center py-12">
-            <p className="text-destructive">Failed to load products. Please try again.</p>
-          </div>
-        )}
-
-        {/* Product Grid */}
-        {!isLoading && !error && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {products.length === 0 ? (
-              <div className="col-span-full text-center py-12">
-                <p className="text-muted-foreground">No products available at the moment.</p>
-              </div>
-            ) : (
-              products.map((product) => {
-                const stockStatus = getStockStatus(product);
-                const isOutOfStock = !product.is_available || (product.stock_quantity !== null && product.stock_quantity <= 0);
-
-                return (
-                  <div
-                    key={product.id}
-                    className={`bg-card rounded-xl border border-border hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 ${isOutOfStock ? 'opacity-70' : ''}`}
-                  >
-                    <Link to={`/product/${product.id}`} className="block">
-                      {product.image_url ? (
-                        <div className="aspect-square bg-muted/50 rounded-t-xl overflow-hidden">
-                          <img 
-                            src={product.image_url} 
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="aspect-square bg-muted/50 rounded-t-xl flex items-center justify-center">
-                          <Package className="w-16 h-16 text-muted-foreground/30" />
-                        </div>
-                      )}
-                    </Link>
-                    <div className="p-5">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="inline-block text-xs font-medium text-secondary bg-secondary/10 px-2 py-1 rounded-full">
-                          {getCategoryLabel(product.category)}
-                        </span>
-                        {stockStatus && (
-                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                            stockStatus.color === 'destructive' ? 'bg-destructive/10 text-destructive' :
-                            stockStatus.color === 'warning' ? 'bg-yellow-500/10 text-yellow-600' :
-                            'bg-green-500/10 text-green-600'
-                          }`}>
-                            {stockStatus.label}
-                          </span>
-                        )}
-                      </div>
-                      <Link to={`/product/${product.id}`}>
-                        <h3 className="font-heading font-semibold text-lg text-foreground mb-1 hover:text-primary transition-colors">
-                          {product.name}
-                        </h3>
-                      </Link>
-                      {product.description && (
-                        <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                          {product.description}
-                        </p>
-                      )}
-                      <div className="flex items-baseline gap-2 mb-4">
-                        <span className="text-xl font-bold text-primary">₹{product.price}</span>
-                        <span className="text-sm text-muted-foreground">per {product.unit}</span>
-                      </div>
-                      <Button 
-                        variant={isOutOfStock ? "outline" : "default"} 
-                        size="sm" 
-                        className="w-full" 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleAddToCart(product);
-                        }}
-                        disabled={isOutOfStock}
-                      >
-                        <ShoppingCart className="w-4 h-4 mr-2" />
-                        {isOutOfStock ? "Out of Stock" : "Add to Cart"}
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        )}
-
         {/* CTA */}
-        <div className="text-center">
-          <p className="text-muted-foreground mb-4">
-            Want something specific? Contact us for custom orders!
+        <div className="text-center mt-12">
+          <p className="text-muted-foreground mb-4 text-lg">
+            Want something specific? We're happy to help!
           </p>
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
+            variant="outline"
+            className="font-semibold"
             onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
           >
             Contact Us for Custom Orders

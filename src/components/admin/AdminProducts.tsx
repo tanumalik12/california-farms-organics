@@ -27,6 +27,8 @@ const AdminProducts = () => {
     category: "vegetables",
     stock_quantity: "",
     is_available: true,
+    is_bestseller: false,
+    is_fresh_today: false,
   });
 
   const resetForm = () => {
@@ -38,6 +40,8 @@ const AdminProducts = () => {
       category: "vegetables",
       stock_quantity: "",
       is_available: true,
+      is_bestseller: false,
+      is_fresh_today: false,
     });
     setImagePreviews([]);
     setImageFiles([]);
@@ -122,7 +126,9 @@ const AdminProducts = () => {
         category: formData.category,
         stock_quantity: parseInt(formData.stock_quantity) || 0,
         is_available: formData.is_available,
-        image_url: allImageUrls[0] || null, // Keep first image as primary for backward compatibility
+        is_bestseller: formData.is_bestseller,
+        is_fresh_today: formData.is_fresh_today,
+        image_url: allImageUrls[0] || null,
         image_urls: allImageUrls,
       };
 
@@ -163,6 +169,8 @@ const AdminProducts = () => {
       category: product.category || "vegetables",
       stock_quantity: product.stock_quantity?.toString() || "0",
       is_available: product.is_available ?? true,
+      is_bestseller: product.is_bestseller ?? false,
+      is_fresh_today: product.is_fresh_today ?? false,
     });
     setShowForm(true);
   };
@@ -349,9 +357,10 @@ const AdminProducts = () => {
                   <option value="leafy">Leafy Greens</option>
                   <option value="fruits">Fruits</option>
                   <option value="herbs">Herbs</option>
+                  <option value="combos">Organic Combos</option>
                 </select>
               </div>
-              <div className="flex items-center">
+              <div className="flex flex-col gap-2">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -360,6 +369,24 @@ const AdminProducts = () => {
                     className="w-4 h-4"
                   />
                   <span>In Stock</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_bestseller}
+                    onChange={(e) => setFormData({ ...formData, is_bestseller: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <span>Best Seller</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_fresh_today}
+                    onChange={(e) => setFormData({ ...formData, is_fresh_today: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <span>Fresh Today</span>
                 </label>
               </div>
             </div>
