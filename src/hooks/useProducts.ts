@@ -10,9 +10,12 @@ export interface Product {
   image_url: string | null;
   image_urls: string[] | null;
   category: string | null;
+  subcategory: string | null;
   stock_quantity: number | null;
   is_available: boolean | null;
   is_hidden: boolean | null;
+  is_bestseller: boolean | null;
+  is_fresh_today: boolean | null;
   created_at: string;
   updated_at: string;
 }
